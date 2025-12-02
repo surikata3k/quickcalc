@@ -1,203 +1,258 @@
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Calculadora de complejidad de contraseña</title>
-    <style>
-        :root{
-            --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2;
-            --good:#16a34a; --warn:#f59e0b; --bad:#ef4444; --accent:#60a5fa;
-        }
-        *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-        body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#071029 0%, #08131d 100%);color:#e6eef8;padding:24px}
-        .card{width:100%;max-width:720px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:20px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-        h1{margin:0 0 10px;font-size:18px}
-        p.lead{margin:0 0 18px;color:var(--muted);font-size:13px}
-        .row{display:flex;gap:12px;align-items:center}
-        .col{flex:1}
-        input[type="password"], input[type="text"]{
-            width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);
-            background:rgba(255,255,255,0.02);color:inherit;font-size:15px
-        }
-        .controls{display:flex;gap:8px;margin-left:8px}
-        button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:inherit;cursor:pointer}
-        .meter{height:14px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;margin-top:14px}
-        .meter > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--bad),var(--warn),var(--good));transition:width .25s ease}
-        .info{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
-        .chip{background:rgba(255,255,255,0.02);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
-        .suggestions{margin-top:12px;color:var(--muted);font-size:13px}
-        .label-small{font-size:12px;color:var(--muted);margin-bottom:6px}
-        .list{margin:8px 0 0;padding-left:18px;color:var(--muted)}
-        footer{margin-top:16px;color:var(--muted);font-size:12px}
-        .score{font-weight:600;font-variant-numeric:tabular-nums}
-        .status{font-weight:700}
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calculadora de combinaciones y entropía de contraseñas</title>
+<style>
+    :root{
+        --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa;
+        --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071026 0%, #072433 100%);color:#e6eef6}
+    .wrap{max-width:980px;margin:32px auto;padding:20px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.7)}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:0 0 18px;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{background:var(--card);padding:14px;border-radius:10px}
+    label.row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px}
+    input[type="number"], input[type="text"], select{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    .sets{display:flex;flex-wrap:wrap;gap:8px}
+    .sets label{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+    button{background:var(--accent);color:#04263b;border:0;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    .out{display:flex;flex-direction:column;gap:8px}
+    .stat{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+    .muted{color:var(--muted);font-size:13px}
+    .bar{height:12px;border-radius:8px;background:rgba(255,255,255,0.04);overflow:hidden}
+    .bar > i{display:block;height:100%}
+    .classification{padding:8px;border-radius:8px;color:#04263b;font-weight:700}
+    .copy{font-size:13px;padding:6px 8px}
+    footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:right}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <main class="card" role="main">
-        <h1>Calculadora de complejidad de contraseña</h1>
-        <p class="lead">Introduce una contraseña y obtén una estimación de su entropía y fuerza según longitud y tipos de caracteres.</p>
+<div class="wrap">
+    <h1>Calculadora de combinaciones y entropía</h1>
+    <p class="lead">Selecciona los tipos de caracteres y la longitud. Calcula combinaciones, entropía, clasificación y tiempo aproximado de ataque por fuerza bruta.</p>
 
-        <div class="row" style="align-items:flex-start">
-            <div class="col">
-                <label class="label-small" for="pwd">Contraseña</label>
-                <div style="display:flex;gap:8px">
-                    <input id="pwd" type="password" autocomplete="new-password" placeholder="Escribe una contraseña..." />
-                    <div class="controls">
-                        <button id="toggle">Mostrar</button>
-                        <button id="copy">Copiar</button>
-                    </div>
+    <div class="grid">
+        <div class="card">
+            <div style="display:flex;gap:12px;margin-bottom:10px;">
+                <div style="flex:1">
+                    <label class="row"><span class="muted">Longitud</span>
+                        <input id="length" type="number" min="1" max="10000" value="12" />
+                    </label>
                 </div>
-
-                <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
-
-                <div class="info" aria-live="polite">
-                    <div class="chip">Entropía: <span id="entropy" class="score">0</span> bits</div>
-                    <div class="chip">Longitud: <span id="length">0</span></div>
-                    <div class="chip">Pool: <span id="pool">0</span> caracteres</div>
-                    <div class="chip">Fuerza: <span id="strength" class="status">—</span></div>
-                </div>
-
-                <div class="suggestions" id="suggestions">
-                    <div class="label-small">Sugerencias:</div>
-                    <ul class="list" id="suggestList">
-                        <li>Introduce una contraseña para ver recomendaciones.</li>
-                    </ul>
+                <div style="width:180px;">
+                    <label class="row"><span class="muted">Velocidad</span>
+                        <select id="speed">
+                            <option value="1000000">CPU (≈1e6 intentos/s)</option>
+                            <option value="1000000000">GPU moderna (≈1e9 intentos/s)</option>
+                            <option value="10000000000" selected>Última generación doméstico (≈1e10 intentos/s)</option>
+                            <option value="100000000000000">Granjas/cluster (≈1e14 intentos/s)</option>
+                        </select>
+                    </label>
                 </div>
             </div>
 
-            <aside style="width:220px">
-                <div class="label-small">Reglas utilizadas</div>
-                <ul class="list" style="color:var(--muted);margin-top:6px">
-                    <li>Pool de caracteres suma: minúsculas (26), mayúsculas (26), dígitos (10), símbolos (32)</li>
-                    <li>Entropía ≈ longitud × log2(pool)</li>
-                    <li>Se muestran recomendaciones básicas para mejorar fuerza</li>
-                </ul>
-            </aside>
+            <div style="margin-bottom:8px">
+                <div class="muted">Conjuntos de caracteres</div>
+                <div class="sets" style="margin-top:6px">
+                    <label><input id="lower" type="checkbox" checked /> minúsculas (a-z)</label>
+                    <label><input id="upper" type="checkbox" checked /> MAYÚSCULAS (A-Z)</label>
+                    <label><input id="numbers" type="checkbox" checked /> números (0-9)</label>
+                    <label><input id="symbols" type="checkbox" /> símbolos</label>
+                </div>
+                <div style="margin-top:8px">
+                    <div class="muted">Símbolos (editable)</div>
+                    <input id="symbolsList" type="text" value="!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~" />
+                </div>
+            </div>
+
+            <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+                <button id="calcBtn">Calcular</button>
+                <button id="resetBtn" class="copy">Restablecer</button>
+            </div>
         </div>
 
-        <footer>
-            Mapa de fuerza aproximado: &lt;28 bits (Muy débil), 28–35 (Débil), 36–59 (Razonable), 60–127 (Fuerte), ≥128 (Muy fuerte).
-        </footer>
-    </main>
+        <div class="card">
+            <div class="out" id="results">
+                <div class="stat"><div class="muted">Tamaño del conjunto de caracteres</div><div id="charsetSize">—</div></div>
+                <div class="stat"><div class="muted">Combinaciones posibles</div><div id="combinations">—</div></div>
+                <div class="stat"><div class="muted">Entropía</div><div id="entropy">—</div></div>
 
-    <script>
-        // Elementos
-        const pwd = document.getElementById('pwd');
-        const meterFill = document.getElementById('meterFill');
-        const entropyEl = document.getElementById('entropy');
-        const lengthEl = document.getElementById('length');
-        const poolEl = document.getElementById('pool');
-        const strengthEl = document.getElementById('strength');
-        const suggestions = document.getElementById('suggestList');
-        const toggle = document.getElementById('toggle');
-        const copyBtn = document.getElementById('copy');
+                <div>
+                    <div class="muted">Clasificación</div>
+                    <div id="classification" class="classification" style="margin-top:6px;background:var(--warn);">—</div>
+                </div>
 
-        // tamaños de pool por tipo
-        const SIZES = {
-            lower: 26,
-            upper: 26,
-            digits: 10,
-            symbols: 32 // aproximación común
-        };
+                <div style="margin-top:8px">
+                    <div class="muted">Barra de entropía</div>
+                    <div class="bar" style="margin-top:6px"><i id="entropyBar" style="width:0%;background:var(--bad)"></i></div>
+                </div>
 
-        function analyze(password){
-            const len = password.length;
-            lengthEl.textContent = len;
+                <div style="margin-top:10px">
+                    <div class="muted">Tiempo estimado para probar todas las combinaciones (peor caso)</div>
+                    <div id="timeWorst" class="stat">—</div>
+                    <div class="muted" style="margin-top:8px">Tiempo estimado medio (encontrar la contraseña ≈ mitad del espacio)</div>
+                    <div id="timeAvg" class="stat">—</div>
+                </div>
 
-            // detecta tipos presentes
-            const hasLower = /[a-z]/.test(password);
-            const hasUpper = /[A-Z]/.test(password);
-            const hasDigits = /[0-9]/.test(password);
-            const hasSymbols = /[^A-Za-z0-9]/.test(password);
+            </div>
+        </div>
+    </div>
 
-            let pool = 0;
-            if (hasLower) pool += SIZES.lower;
-            if (hasUpper) pool += SIZES.upper;
-            if (hasDigits) pool += SIZES.digits;
-            if (hasSymbols) pool += SIZES.symbols;
+    <footer>Resultados aproximados. Las velocidades son estimadas y dependen del hardware y del algoritmo.</footer>
+</div>
 
-            // si no hay caracteres reconocidos (ej. vacío), pool=0
-            poolEl.textContent = pool || 0;
+<script>
+(function(){
+    const el = id => document.getElementById(id);
+    const lower = el('lower'), upper = el('upper'), numbers = el('numbers'), symbols = el('symbols');
+    const symbolsList = el('symbolsList'), lengthInput = el('length'), speedSel = el('speed');
+    const charsetSizeOut = el('charsetSize'), combinationsOut = el('combinations'), entropyOut = el('entropy');
+    const classificationOut = el('classification'), entropyBar = el('entropyBar');
+    const timeWorst = el('timeWorst'), timeAvg = el('timeAvg');
+    const calcBtn = el('calcBtn'), resetBtn = el('resetBtn');
 
-            // entropía: longitud * log2(pool)
-            let entropy = 0;
-            if (pool > 0 && len > 0) {
-                entropy = len * Math.log2(pool);
-            }
-            // redondeo a 1 decimal
-            entropy = Math.round(entropy * 10) / 10;
-            entropyEl.textContent = entropy;
-
-            // determina etiqueta de fuerza
-            let label = 'Muy débil';
-            if (entropy < 28) label = 'Muy débil';
-            else if (entropy < 36) label = 'Débil';
-            else if (entropy < 60) label = 'Razonable';
-            else if (entropy < 128) label = 'Fuerte';
-            else label = 'Muy fuerte';
-            strengthEl.textContent = label;
-
-            // actualiza barra (mapear 0-60 bits a 0-100% y saturar)
-            const pct = Math.min(100, (entropy / 60) * 100);
-            meterFill.style.width = pct + '%';
-
-            // ajustar color por estado (simple)
-            if (entropy < 28) {
-                meterFill.style.filter = 'hue-rotate(0deg) saturate(120%)';
-            } else if (entropy < 60) {
-                meterFill.style.filter = 'hue-rotate(45deg) saturate(110%)';
-            } else {
-                meterFill.style.filter = 'hue-rotate(110deg) saturate(120%)';
-            }
-
-            // sugerencias
-            const tips = [];
-            if (len === 0) {
-                tips.push('Introduce una contraseña para obtener recomendaciones.');
-            } else {
-                if (len < 8) tips.push('Aumenta la longitud (>= 12 recomendado).');
-                if (!hasLower) tips.push('Incluye letras minúsculas.');
-                if (!hasUpper) tips.push('Incluye letras mayúsculas.');
-                if (!hasDigits) tips.push('Incluye números.');
-                if (!hasSymbols) tips.push('Incluye símbolos (p. ej. !@#%&*).');
-                // comprobar caracteres únicos
-                const uniqueCount = new Set(password).size;
-                if (uniqueCount / Math.max(len,1) < 0.5) tips.push('Evita repetir demasiados caracteres.');
-                // evitar patrones simples (secuencias)
-                if (/(1234|abcd|password|qwerty|asdf)/i.test(password)) tips.push('Evita patrones comunes o palabras del diccionario.');
-                if (entropy >= 60) tips.push('Contraseña con buena entropía.');
-            }
-
-            // renderizar sugerencias
-            suggestions.innerHTML = '';
-            for (const t of tips) {
-                const li = document.createElement('li');
-                li.textContent = t;
-                suggestions.appendChild(li);
-            }
+    function compute() {
+        const length = Math.max(1, Math.floor(Number(lengthInput.value) || 1));
+        let charset = 0;
+        if (lower.checked) charset += 26;
+        if (upper.checked) charset += 26;
+        if (numbers.checked) charset += 10;
+        if (symbols.checked) {
+            // Count unique chars in symbolsList
+            const unique = Array.from(new Set(symbolsList.value.split('')));
+            // exclude space if provided
+            const filtered = unique.filter(c => c.trim() !== '');
+            charset += filtered.length;
         }
 
-        // eventos
-        pwd.addEventListener('input', ()=> analyze(pwd.value));
-        toggle.addEventListener('click', ()=>{
-            if (pwd.type === 'password') { pwd.type = 'text'; toggle.textContent = 'Ocultar'; }
-            else { pwd.type = 'password'; toggle.textContent = 'Mostrar'; }
-        });
-        copyBtn.addEventListener('click', async ()=>{
-            try {
-                await navigator.clipboard.writeText(pwd.value);
-                copyBtn.textContent = 'Copiado';
-                setTimeout(()=> copyBtn.textContent = 'Copiar', 1200);
-            } catch(e){
-                copyBtn.textContent = 'Error';
-                setTimeout(()=> copyBtn.textContent = 'Copiar', 1200);
-            }
-        });
+        charsetSizeOut.textContent = charset || '0';
 
-        // inicializa con vacío
-        analyze('');
-    </script>
+        if (!charset) {
+            combinationsOut.textContent = 'Selecciona al menos un conjunto';
+            entropyOut.textContent = '0 bits';
+            classificationOut.textContent = 'Inseguro';
+            classificationOut.style.background = 'var(--bad)';
+            entropyBar.style.width = '2%'; entropyBar.style.background = 'var(--bad)';
+            timeWorst.textContent = '—'; timeAvg.textContent = '—';
+            return;
+        }
+
+        // Entropy (bits)
+        const entropy = length * Math.log2(charset);
+        entropyOut.textContent = entropy.toFixed(2) + ' bits';
+
+        // Classification based on entropy
+        let cls = '', color = '';
+        if (entropy < 28) { cls = 'Muy débil'; color = 'var(--bad)'; }
+        else if (entropy < 36) { cls = 'Débil'; color = 'var(--warn)'; }
+        else if (entropy < 60) { cls = 'Aceptable'; color = 'orange'; }
+        else if (entropy < 128) { cls = 'Fuerte'; color = 'var(--good)'; }
+        else { cls = 'Muy fuerte'; color = 'teal'; }
+        classificationOut.textContent = cls;
+        classificationOut.style.background = color;
+
+        // Entropy bar (map 0..128+ bits to 0..100%)
+        const barPerc = Math.min(100, (entropy / 128) * 100);
+        entropyBar.style.width = barPerc + '%';
+        // color gradient
+        if (entropy < 36) entropyBar.style.background = 'var(--bad)';
+        else if (entropy < 60) entropyBar.style.background = 'var(--warn)';
+        else entropyBar.style.background = 'var(--good)';
+
+        // Combinations: show as exact BigInt when reasonable, otherwise use scientific via entropy
+        // combos = charset^length -> number of possibilities
+        let combosBig;
+        try {
+            combosBig = BigInt(Math.floor(charset)) ** BigInt(length);
+            // show exact when digits <= 30
+            const combosStr = combosBig.toString();
+            combinationsOut.textContent = combosStr.length <= 30 ? combosStr : toScientificFromBigInt(combosBig);
+        } catch (e) {
+            combinationsOut.textContent = toScientificFromEntropy(entropy);
+        }
+
+        // Time estimations
+        const attempts = Number(speedSel.value) || 1e10; // intentos por segundo
+        // Use log10(seconds) = entropy*log10(2) - log10(attempts)
+        const log10Seconds = entropy * Math.log10(2) - Math.log10(attempts);
+        const worst = formatTimeFromLog10(log10Seconds);
+        const avg = formatTimeFromLog10(log10Seconds - Math.log10(2)); // divide by 2 -> subtract log10(2)
+        timeWorst.textContent = worst;
+        timeAvg.textContent = avg;
+    }
+
+    function toScientificFromBigInt(b) {
+        const s = b.toString();
+        const len = s.length;
+        const first = s.slice(0,6);
+        return first + '… ×10^' + (len-1) + ' (' + s.length + ' dígitos)';
+    }
+    function toScientificFromEntropy(entropy) {
+        const log10 = entropy * Math.log10(2);
+        const mant = Math.pow(10, log10 - Math.floor(log10));
+        return mant.toFixed(3) + ' ×10^' + Math.floor(log10);
+    }
+
+    function toHumanSeconds(n) {
+        // n is Number seconds
+        if (!isFinite(n)) return 'Infinito';
+        if (n < 1) return (n*1000).toFixed(2) + ' ms';
+        if (n < 60) return n.toFixed(2) + ' s';
+        if (n < 3600) return (n/60).toFixed(2) + ' min';
+        if (n < 86400) return (n/3600).toFixed(2) + ' h';
+        if (n < 31536000) return (n/86400).toFixed(2) + ' días';
+        const years = n / 31536000;
+        if (years < 1000) return years.toFixed(2) + ' años';
+        const kilo = years / 1000;
+        if (kilo < 1000) return kilo.toFixed(2) + ' mil años';
+        const mega = kilo / 1000;
+        if (mega < 1000) return mega.toFixed(2) + ' millones de años';
+        const giga = mega / 1000;
+        return giga.toFixed(2) + ' mil millones de años';
+    }
+
+    function formatTimeFromLog10(log10Seconds) {
+        // If log10Seconds is small, compute exact and format into s/min/h...
+        if (log10Seconds < 15) {
+            const seconds = Math.pow(10, log10Seconds);
+            return toHumanSeconds(seconds) + ' (' + seconds.toFixed(0) + ' s)';
+        }
+        // Otherwise produce scientific notation + approximate years
+        const yearsLog10 = log10Seconds - Math.log10(31536000);
+        const yearsPower = Math.floor(yearsLog10);
+        const yearsMant = Math.pow(10, yearsLog10 - yearsPower);
+        const approxYears = yearsMant.toFixed(3) + '×10^' + yearsPower + ' años';
+        const approxSeconds = (Math.pow(10, log10Seconds - Math.floor(log10Seconds))).toFixed(3) + '×10^' + Math.floor(log10Seconds) + ' s';
+        return approxSeconds + ' ≈ ' + approxYears;
+    }
+
+    // event listeners
+    calcBtn.addEventListener('click', compute);
+    resetBtn.addEventListener('click', () => {
+        lower.checked = true; upper.checked = true; numbers.checked = true; symbols.checked = false;
+        symbolsList.value = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+        lengthInput.value = 12;
+        speedSel.value = 10000000000;
+        compute();
+    });
+
+    // compute on input changes
+    [lower, upper, numbers, symbols, symbolsList, lengthInput, speedSel].forEach(i=>{
+        i.addEventListener('input', () => { /* don't spam on every key for symbolsList; debounce maybe */ });
+    });
+    // simple debounce on symbolsList
+    let timeout;
+    symbolsList.addEventListener('input', () => { clearTimeout(timeout); timeout = setTimeout(compute, 350); });
+    [lower, upper, numbers, symbols, lengthInput, speedSel].forEach(e => e.addEventListener('change', compute));
+
+    // initial compute
+    compute();
+})();
+</script>
 </body>
 </html>
