@@ -1,0 +1,156 @@
+/* --- Variables y Reset Básico --- */
+:root {
+    --bg-color: #f4f7f6;
+    --body-text: #333;
+    --card-bg: #fff;
+    --border-color: #ddd;
+    --muted-text: #666;
+    --primary-color: #007bff;
+    
+    --bad: #dc3545;
+    --warn: #ffc107;
+    --good: #28a745;
+    --teal: #17a2b8;
+    --orange: #fd7e14;
+    
+    --spacing: 1.5rem;
+    --radius: 8px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--body-text);
+    line-height: 1.6;
+    padding: var(--spacing);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.small.muted {
+    font-size: 0.95rem;
+    color: var(--muted-text);
+    margin-bottom: var(--spacing);
+}
+
+label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+input[type="password"],
+input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 1.2rem;
+    color: var(--body-text);
+    background-color: var(--card-bg);
+    margin-bottom: var(--spacing);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="password"]:focus,
+input[type="text"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: var(--spacing);
+}
+
+.controls button,
+.controls select {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    font-weight: 600;
+}
+
+#generateBtn {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+#generateBtn:hover {
+    background-color: #0056b3;
+}
+
+.secondary {
+    background-color: var(--border-color);
+    color: var(--body-text);
+}
+
+.secondary:hover {
+    background-color: #ccc;
+}
+
+.controls select {
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--muted-text);
+}
+
+.result {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: var(--spacing);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 1.05rem;
+    align-items: center;
+}
+
+.row:last-child { border-bottom: none; }
+.row strong { font-weight: 600; color: var(--body-text); }
+.row span { font-weight: 700; color: var(--primary-color); font-family: monospace; font-size: 1.2rem; }
+
+.bar {
+    height: 14px;
+    background-color: var(--border-color);
+    border-radius: 7px;
+    overflow: hidden;
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+.bar i {
+    display: block;
+    height: 100%;
+    transition: width 0.4s ease, background-color 0.3s;
+}
+
+@media (max-width: 500px) {
+    .controls { flex-direction: column; align-items: stretch; }
+}
