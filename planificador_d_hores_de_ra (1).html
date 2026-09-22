@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ca" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador i Distribuïdor d'Hores de RA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for textareas and calendar tables */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-50">
+
+    <!-- Header Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-200">
+                    <i data-lucide="calendar-range" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">Planificador d'Hores de RA</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Calculadora i distribuïdora lectiva automatitzada</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="loadExampleData()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Carregar Dades d'Exemple</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Input Data Editor (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
+                <!-- Card Header -->
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-5 h-5 text-indigo-600"></i>
+                        <h2 class="font-semibold text-slate-800 text-sm">Entrada de Dades (.txt)</h2>
+                    </div>
+                    <span class="text-xs text-slate-400">Format text pla</span>
+                </div>
+
+                <!-- Dropzone / Upload Bar -->
+                <div class="p-4 border-b border-slate-100 bg-slate-50/30">
+                    <label id="dropzone" for="fileInput" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-white hover:bg-indigo-50/30 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all group text-center">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-400 group-hover:text-indigo-600 transition-colors mb-1"></i>
+                        <p class="text-xs font-medium text-slate-700">Prem per carregar o arrossega un fitxer <span class="text-indigo-600 font-semibold">.txt</span></p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Processament 100% local al navegador</p>
+                        <input id="fileInput" type="file" accept=".txt" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                </div>
+
+                <!-- Textarea Editor -->
+                <div class="p-4 flex-1 flex flex-col min-h-[350px]">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="txtContent" class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Contingut del Text</label>
+                        <button onclick="clearContent()" class="text-xs text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Netejar</span>
+                        </button>
+                    </div>
+                    <textarea id="txtContent" spellcheck="false" placeholder="Enganxa o escriu aquí les dades del curs, festius, horari i RAs..." class="flex-1 w-full p-3 font-mono text-xs text-slate-800 bg-slate-900/5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none resize-none transition-all"></textarea>
+                </div>
+
+                <!-- Action Button -->
+                <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-2">
+                    <button onclick="processAndCalculate()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium text-sm rounded-xl shadow-md shadow-indigo-100 flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="calculator" class="w-4 h-4"></i>
+                        <span>Calcular Distribució</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Results & Analysis (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Error Banner (Hidden by default) -->
+            <div id="errorAlert" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 shrink-0 mt-0.5"></i>
+                <div class="text-xs leading-relaxed" id="errorMessage">Ha hagut un error en llegir les dades.</div>
+            </div>
+
+            <!-- KPI Cards Row -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <!-- Card 1 -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[11px] font-medium uppercase tracking-wider">Hores Disp.</span>
+                        <i data-lucide="clock" class="w-4 h-4 text-emerald-500"></i>
+                    </div>
+                    <div>
+                        <div id="kpiAvailableHours" class="text-2xl font-bold text-slate-900">0h</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Capacitat del curs</p>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[11px] font-medium uppercase tracking-wider">Hores Sol·lic.</span>
+                        <i data-lucide="list-checks" class="w-4 h-4 text-indigo-500"></i>
+                    </div>
+                    <div>
+                        <div id="kpiRequestedHours" class="text-2xl font-bold text-slate-900">0h</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Suma de tots els RAs</p>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[11px] font-medium uppercase tracking-wider">Estat Assign.</span>
+                        <i data-lucide="scale" class="w-4 h-4 text-amber-500"></i>
+                    </div>
+                    <div>
+                        <div id="kpiStatusBadge" class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                            Pendent
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5" id="kpiStatusDesc">Sense dades</p>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-[11px] font-medium uppercase tracking-wider">Dies Lectius</span>
+                        <i data-lucide="calendar" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <div>
+                        <div id="kpiTeachingDays" class="text-2xl font-bold text-slate-900">0</div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Sessions efectives</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Copyable Output Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i>
+                        <h2 class="font-semibold text-slate-800 text-sm">Resum de la Distribució (Format de Sortida)</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="copyFormattedText()" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all active:scale-95">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            <span id="copyBtnText">Copiar al portapapers</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-slate-900">
+                    <pre id="outputFormattedText" class="font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed min-h-[120px] selection:bg-indigo-500 selection:text-white">// Els resultats calculats apareixeran aquí...</pre>
+                </div>
+            </div>
+
+            <!-- Detailed RA Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+                        <h2 class="font-semibold text-slate-800 text-sm">Detall per Resultat d'Aprenentatge</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadCSV()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>CSV</span>
+                        </button>
+                        <button onclick="downloadTXT()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors">
+                            <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                            <span>TXT</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">RA</th>
+                                <th class="py-3 px-4">Data Inici</th>
+                                <th class="py-3 px-4">Data Fi</th>
+                                <th class="py-3 px-4 text-center">Hores Adjudicades</th>
+                                <th class="py-3 px-4">Tipus Assignació</th>
+                            </tr>
+                        </thead>
+                        <tbody id="raTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-slate-400 italic">No hi ha dades per mostrar. Premeu "Calcular Distribució".</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Calendar Day Breakdown (Accordion) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <button onclick="toggleCalendarSection()" class="w-full p-4 bg-slate-50/50 hover:bg-slate-100/50 transition-colors flex items-center justify-between text-left">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600"></i>
+                        <div>
+                            <h2 class="font-semibold text-slate-800 text-sm">Calendari Lectiu Desglossat per Dies</h2>
+                            <p class="text-[11px] text-slate-400">Veure cada dia de classe amb les hores i el RA assignat</p>
+                        </div>
+                    </div>
+                    <i id="calendarChevron" data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-200"></i>
+                </button>
+
+                <div id="calendarContent" class="hidden border-t border-slate-100 p-4">
+                    <div class="max-h-72 overflow-y-auto pr-1">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-500 uppercase text-[10px] tracking-wider sticky top-0">
+                                <tr>
+                                    <th class="py-2 px-3">Data</th>
+                                    <th class="py-2 px-3">Dia</th>
+                                    <th class="py-2 px-3 text-center">Hores</th>
+                                    <th class="py-2 px-3">RA Assignat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dayBreakdownBody" class="divide-y divide-slate-100 text-slate-600">
+                                <tr>
+                                    <td colspan="4" class="py-4 text-center text-slate-400">Calcular per carregar el calendari.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 ease-out bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs z-50 pointer-events-none">
+        <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMessage">Acció realitzada amb èxit</span>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Default sample data provided by the user
+        const SAMPLE_TEXT_DATA = `Data ini: 14/09/2026 
+Data fi: 21/05/2027
+
+Dies i periodes festius
+29/09/2026
+12/10/2026
+30/10/2026
+07/12/2026
+05/02/2027
+08/12/2026
+22/12/2026 : 07/01/2027
+20/03/2027 : 29/03/2027
+10/05/2027
+11/05/2027
+
+Hores de classe per dia:
+Dilluns: 0
+Dimarts: 2
+Dimecres: 0
+Dijous: 0
+Divendres: 0
+
+Hores per cada RA:
+RA1: 14
+RA2: 13
+RA3: 13
+RA4: 13
+RA5: 13`;
+
+        // Day of week Catalan names array (0 = Diumenge, 1 = Dilluns, ...)
+        const DAY_NAMES = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+
+        // Global calculation state
+        let lastCalculatedResults = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadExampleData(); // Load default user query data on start
+            
+            // Drag and Drop listeners
+            const dropzone = document.getElementById('dropzone');
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('border-indigo-500', 'bg-indigo-50/50');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+                }, false);
+            });
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    readSingleFile(files[0]);
+                }
+            });
+        });
+
+        function loadExampleData() {
+            document.getElementById('txtContent').value = SAMPLE_TEXT_DATA;
+            hideError();
+            processAndCalculate();
+            showToast("Dades d'exemple carregades");
+        }
+
+        function clearContent() {
+            document.getElementById('txtContent').value = '';
+            hideError();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                readSingleFile(file);
+            }
+        }
+
+        function readSingleFile(file) {
+            if (!file.name.endsWith('.txt') && file.type !== 'text/plain') {
+                showError("El fitxer seleccionat ha de ser de format text (.txt).");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('txtContent').value = e.target.result;
+                hideError();
+                processAndCalculate();
+                showToast(`Fitxer "${file.name}" carregat`);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseInputText(text) {
+            const lines = text.split('\n').map(l => l.trim());
+            
+            let startDate = null;
+            let endDate = null;
+            const holidays = new Set();
+            const weeklyHours = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            const raList = [];
+
+            let currentSection = '';
+
+            for (let line of lines) {
+                if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+
+                // Detect Start Date
+                const startMatch = line.match(/Data\s*ini\s*:\s*(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4})/i);
+                if (startMatch) {
+                    startDate = parseDateDDMMYYYY(startMatch[1]);
+                    continue;
+                }
+
+                // Detect End Date
+                const endMatch = line.match(/Data\s*fi\s*:\s*(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4})/i);
+                if (endMatch) {
+                    endDate = parseDateDDMMYYYY(endMatch[1]);
+                    continue;
+                }
+
+                // Detect Section Headers
+                if (/Dies\s*i\s*per[ií]odes\s*festius/i.test(line)) {
+                    currentSection = 'festius';
+                    continue;
+                } else if (/Hores\s*de\s*classe\s*per\s*dia/i.test(line)) {
+                    currentSection = 'horari';
+                    continue;
+                } else if (/Hores\s*per\s*cada\s*RA/i.test(line)) {
+                    currentSection = 'ra';
+                    continue;
+                }
+
+                // Parse according to active section or line pattern
+                // 1. Check for Holiday Range or Single Holiday
+                const dateRangeMatch = line.match(/(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4})\s*[:\-a]\s*(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4})/);
+                if (dateRangeMatch) {
+                    const rStart = parseDateDDMMYYYY(dateRangeMatch[1]);
+                    const rEnd = parseDateDDMMYYYY(dateRangeMatch[2]);
+                    if (rStart && rEnd) {
+                        let curr = new Date(rStart);
+                        while (curr <= rEnd) {
+                            holidays.add(formatDateISO(curr));
+                            curr.setDate(curr.getDate() + 1);
+                        }
+                    }
+                    continue;
+                }
+
+                const singleDateMatch = line.match(/^(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4})$/);
+                if (singleDateMatch) {
+                    const d = parseDateDDMMYYYY(singleDateMatch[1]);
+                    if (d) holidays.add(formatDateISO(d));
+                    continue;
+                }
+
+                // 2. Check for Weekly Hours (e.g., Dimarts: 2)
+                const dayMatch = line.match(/^(Dilluns|Dimarts|Dimecres|Dijous|Divendres|Dissabte|Diumenge|Lunes|Martes|Miércoles|Miercoles|Jueves|Viernes|Sábado|Sabado|Domingo)\s*:\s*(\d+(?:[\.,]\d+)?)/i);
+                if (dayMatch) {
+                    const dayName = dayMatch[1].toLowerCase();
+                    const hours = parseFloat(dayMatch[2].replace(',', '.'));
+                    
+                    if (dayName.includes('dillun') || dayName.includes('lunes')) weeklyHours[1] = hours;
+                    else if (dayName.includes('dimart') || dayName.includes('martes')) weeklyHours[2] = hours;
+                    else if (dayName.includes('dimecre') || dayName.includes('mi[eé]rcoles')) weeklyHours[3] = hours;
+                    else if (dayName.includes('dijou') || dayName.includes('jueves')) weeklyHours[4] = hours;
+                    else if (dayName.includes('divendres') || dayName.includes('viernes')) weeklyHours[5] = hours;
+                    else if (dayName.includes('dissabte') || dayName.includes('s[aá]bado')) weeklyHours[6] = hours;
+                    else if (dayName.includes('diumenge') || dayName.includes('domingo')) weeklyHours[0] = hours;
+                    continue;
+                }
+
+                // 3. Check for RAs (e.g., RA1: 14)
+                const raMatch = line.match(/^(RA\s*\d+[a-zA-Z0-9_]*)\s*:\s*(\d+(?:[\.,]\d+)?)/i);
+                if (raMatch) {
+                    raList.push({
+                        name: raMatch[1].replace(/\s+/g, '').toUpperCase(),
+                        requestedHours: parseFloat(raMatch[2].replace(',', '.'))
+                    });
+                    continue;
+                }
+            }
+
+            if (!startDate || !endDate) {
+                throw new Error("Falta la data d'inici o de finalització al fitxer (format DD/MM/YYYY).");
+            }
+            if (startDate > endDate) {
+                throw new Error("La data d'inici no pot ser posterior a la data de fi.");
+            }
+            if (raList.length === 0) {
+                throw new Error("No s'ha trobat cap RA especificat (ex. 'RA1: 14').");
+            }
+
+            return { startDate, endDate, holidays, weeklyHours, raList };
+        }
+
+        function parseDateDDMMYYYY(str) {
+            const parts = str.split(/[\/\.-]/);
+            if (parts.length !== 3) return null;
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const year = parseInt(parts[2], 10);
+            const date = new Date(year, month, day);
+            return (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) ? date : null;
+        }
+
+        function formatDateDDMMYYYY(date) {
+            if (!date) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatDateISO(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${year}-${month}-${day}`;
+        }
+
+        function processAndCalculate() {
+            const text = document.getElementById('txtContent').value;
+            if (!text.trim()) {
+                showError("L'àrea de text està buida. Enganxa un contingut o carrega un fitxer.");
+                return;
+            }
+
+            try {
+                hideError();
+                const config = parseInputText(text);
+                
+                // 1. Find all effective teaching days
+                const teachingDays = [];
+                let curr = new Date(config.startDate);
+
+                while (curr <= config.endDate) {
+                    const isoDate = formatDateISO(curr);
+                    const dayOfWeek = curr.getDay(); // 0-6
+                    const dayHours = config.weeklyHours[dayOfWeek] || 0;
+
+                    // Exclude holidays and days with 0 hours
+                    if (!config.holidays.has(isoDate) && dayHours > 0) {
+                        teachingDays.push({
+                            date: new Date(curr),
+                            formattedDate: formatDateDDMMYYYY(curr),
+                            dayName: DAY_NAMES[dayOfWeek],
+                            hours: dayHours,
+                            remainingHours: dayHours // for assignment logic
+                        });
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+
+                const totalAvailableHours = teachingDays.reduce((sum, d) => sum + d.hours, 0);
+                const totalRequestedHours = config.raList.reduce((sum, r) => sum + r.requestedHours, 0);
+
+                if (totalAvailableHours === 0) {
+                    throw new Error("No hi ha cap hora lectiva disponible entre les dates indicades (comprova els dies festius i l'horari setmanal).");
+                }
+
+                // 2. Allocate hours per RA (Sufficient vs Proportional)
+                const isProportional = totalAvailableHours < totalRequestedHours;
+                
+                let allocatedRAs = [];
+
+                if (!isProportional) {
+                    // Exact assignment
+                    allocatedRAs = config.raList.map(ra => ({
+                        name: ra.name,
+                        requestedHours: ra.requestedHours,
+                        assignedHours: ra.requestedHours,
+                        type: 'Assignat'
+                    }));
+                } else {
+                    // Proportional distribution (Largest Remainder / Hamilton Method for integers)
+                    let totalAllocatedExact = 0;
+                    const tempRAs = config.raList.map(ra => {
+                        const exactShare = (ra.requestedHours / totalRequestedHours) * totalAvailableHours;
+                        const floorShare = Math.floor(exactShare);
+                        const remainder = exactShare - floorShare;
+                        totalAllocatedExact += floorShare;
+                        return {
+                            name: ra.name,
+                            requestedHours: ra.requestedHours,
+                            floorShare: floorShare,
+                            remainder: remainder,
+                            assignedHours: floorShare,
+                            type: 'Assignació proporcional'
+                        };
+                    });
+
+                    let unassignedHours = Math.round(totalAvailableHours - totalAllocatedExact);
+
+                    // Distribute remaining unassigned hours to RAs with highest remainders
+                    tempRAs.sort((a, b) => b.remainder - a.remainder);
+                    for (let i = 0; i < unassignedHours; i++) {
+                        tempRAs[i % tempRAs.length].assignedHours += 1;
+                    }
+
+                    // Restore original RA order
+                    const raOrderMap = new Map(config.raList.map((r, idx) => [r.name, idx]));
+                    tempRAs.sort((a, b) => raOrderMap.get(a.name) - raOrderMap.get(b.name));
+
+                    allocatedRAs = tempRAs;
+                }
+
+                // 3. Chronological Mapping onto Teaching Days
+                let dayIndex = 0;
+                const detailedDayLog = []; // track every day session
+
+                allocatedRAs.forEach(ra => {
+                    let needed = ra.assignedHours;
+                    let startDateRA = null;
+                    let endDateRA = null;
+
+                    while (needed > 0 && dayIndex < teachingDays.length) {
+                        const day = teachingDays[dayIndex];
+                        if (!startDateRA) startDateRA = day.formattedDate;
+                        endDateRA = day.formattedDate;
+
+                        const take = Math.min(needed, day.remainingHours);
+                        needed -= take;
+                        day.remainingHours -= take;
+
+                        detailedDayLog.push({
+                            dateStr: day.formattedDate,
+                            dayName: day.dayName,
+                            hours: take,
+                            raName: ra.name
+                        });
+
+                        if (day.remainingHours === 0) {
+                            dayIndex++;
+                        }
+                    }
+
+                    ra.startDate = startDateRA || 'N/A';
+                    ra.endDate = endDateRA || 'N/A';
+                });
+
+                lastCalculatedResults = {
+                    startDate: config.startDate,
+                    endDate: config.endDate,
+                    totalAvailableHours,
+                    totalRequestedHours,
+                    isProportional,
+                    totalTeachingDaysCount: teachingDays.length,
+                    allocatedRAs,
+                    detailedDayLog
+                };
+
+                renderResults(lastCalculatedResults);
+
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function renderResults(res) {
+            // Update KPIs
+            document.getElementById('kpiAvailableHours').textContent = `${res.totalAvailableHours}h`;
+            document.getElementById('kpiRequestedHours').textContent = `${res.totalRequestedHours}h`;
+            document.getElementById('kpiTeachingDays').textContent = res.totalTeachingDaysCount;
+
+            const badgeEl = document.getElementById('kpiStatusBadge');
+            const descEl = document.getElementById('kpiStatusDesc');
+
+            if (!res.isProportional) {
+                badgeEl.className = "inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+                badgeEl.textContent = "Suficient";
+                descEl.textContent = "Assignació 100% directa";
+            } else {
+                badgeEl.className = "inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800";
+                badgeEl.textContent = "Proporcional";
+                descEl.textContent = "Hores ajustades per capacitat";
+            }
+
+            // Render Output Text Block (Format required: RA1 - Data inici - Data fi - Hores - Assignat o proporcional.)
+            const textLines = res.allocatedRAs.map(ra => {
+                return `${ra.name} - ${ra.startDate} - ${ra.endDate} - ${ra.assignedHours}h - ${ra.type}.`;
+            });
+            document.getElementById('outputFormattedText').textContent = textLines.join('\n');
+
+            // Render RA Table
+            const tbody = document.getElementById('raTableBody');
+            tbody.innerHTML = '';
+
+            res.allocatedRAs.forEach(ra => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors";
+
+                const isProp = ra.type.includes('proporcional');
+                const badgeClass = isProp 
+                    ? "bg-amber-50 text-amber-700 border-amber-200" 
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold text-slate-900">${ra.name}</td>
+                    <td class="py-3 px-4 font-mono text-slate-600">${ra.startDate}</td>
+                    <td class="py-3 px-4 font-mono text-slate-600">${ra.endDate}</td>
+                    <td class="py-3 px-4 text-center font-bold text-indigo-600 bg-indigo-50/30 rounded-lg">${ra.assignedHours}h</td>
+                    <td class="py-3 px-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${badgeClass}">
+                            ${ra.type}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Render Day breakdown table
+            const dayBody = document.getElementById('dayBreakdownBody');
+            dayBody.innerHTML = '';
+
+            res.detailedDayLog.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-2 px-3 font-mono">${item.dateStr}</td>
+                    <td class="py-2 px-3">${item.dayName}</td>
+                    <td class="py-2 px-3 text-center font-semibold text-slate-800">${item.hours}h</td>
+                    <td class="py-2 px-3 font-bold text-indigo-600">${item.raName}</td>
+                `;
+                dayBody.appendChild(tr);
+            });
+        }
+
+        function copyFormattedText() {
+            const text = document.getElementById('outputFormattedText').textContent;
+            if (!text || text.startsWith('//')) return;
+
+            // Use legacy execCommand for maximum compatibility inside sandboxed iframes
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                const btnText = document.getElementById('copyBtnText');
+                btnText.textContent = "¡Copiat!";
+                showToast("Resultats copiats al portapapers");
+                setTimeout(() => {
+                    btnText.textContent = "Copiar al portapapers";
+                }, 2000);
+            } catch (err) {
+                showError("No s'ha pogut copiar el text.");
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function toggleCalendarSection() {
+            const content = document.getElementById('calendarContent');
+            const chevron = document.getElementById('calendarChevron');
+            content.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        function downloadTXT() {
+            if (!lastCalculatedResults) {
+                showError("Calcula primer la distribució per poder descarregar el fitxer.");
+                return;
+            }
+            const text = document.getElementById('outputFormattedText').textContent;
+            downloadFile("distribució_RA.txt", text, "text/plain");
+        }
+
+        function downloadCSV() {
+            if (!lastCalculatedResults) {
+                showError("Calcula primer la distribució per poder descarregar el fitxer.");
+                return;
+            }
+            let csv = "RA,Data Inici,Data Fi,Hores Adjudicades,Tipus Assignació\n";
+            lastCalculatedResults.allocatedRAs.forEach(ra => {
+                csv += `"${ra.name}","${ra.startDate}","${ra.endDate}",${ra.assignedHours},"${ra.type}"\n`;
+            });
+            downloadFile("distribució_RA.csv", csv, "text/csv");
+        }
+
+        function downloadFile(filename, text, mimeType) {
+            const element = document.createElement('a');
+            element.setAttribute('href', `data:${mimeType};charset=utf-8,` + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showToast(`S'ha descarregat ${filename}`);
+        }
+
+        function showError(msg) {
+            const alertEl = document.getElementById('errorAlert');
+            const msgEl = document.getElementById('errorMessage');
+            msgEl.textContent = msg;
+            alertEl.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorAlert').classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
